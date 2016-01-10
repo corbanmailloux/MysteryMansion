@@ -214,15 +214,15 @@ class Game(object):
 
 		# Pre-populate rooms with their important pieces of furniture.
 		room_names = [
-			Room("Living Room", [121, 122]),
-			Room("Bed Room", [123, 124]),
-			Room("Kitchen", [132, 133, 134, 141]),
-			Room("Music Room", [213]),
-			Room("Game Room", [142, 143]),
-			Room("Study", [131]),
-			Room("Library", [144]),
-			Room("Dining Room", [111, 112, 113]),
-			Room("Gym", [211, 212])
+			Room("Living Room", [121, 122]), # Sofa, Coffee Table
+			Room("Bed Room", [123, 124]), # Bed, Dresser
+			Room("Kitchen", [132, 133, 134, 141]), # Refrigerator, Sink, Oven, Kitchen Table
+			Room("Music Room", [213]), # Piano
+			Room("Game Room", [142, 143]), # Pool Table, Pinball Machines
+			Room("Study", [131]), # Small Bookcase
+			Room("Library", [144]), # Large Bookcase
+			Room("Dining Room", [111, 112, 113]), # (2) Dining Room Chairs, Dining Room Table
+			Room("Gym", [211, 212]) # Whirlpool, Treadmill
 		]
 
 		room_numbers = [11, 12, 13, 14, 21, 22, 23, 24, 31]

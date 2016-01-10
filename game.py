@@ -1,10 +1,14 @@
-import subprocess as sp
+import subprocess as sp # Used to clear the screen
 import random
 
 DEBUG = False
 
 class Furniture(object):
-	"""docstring for Furniture"""
+	"""
+		A single piece of furniture.
+
+		Contains a name, number, and note.
+	"""
 	def __init__(self, name):
 		super(Furniture, self).__init__()
 
@@ -16,28 +20,36 @@ class Furniture(object):
 		return "{0:>3d}: {1}".format(self.code, self.name)
 
 class Note(object):
-	"""docstring for Note"""
+	"""
+		Note objects are the data holder for each piece of furniture.
+
+		This should probably be done through types/subclasses.
+	"""
 	def __init__(self):
 		super(Note, self).__init__()
 
-		self.money = False
-		self.ask = False
-		self.item = None
-		self.person = None
-		self.clue = False
-		self.trapdoor = False
-		self.secret = False
-		self.text = None
+		self.money = False # Contains the money
+		self.ask = False # Ask about the item and/or person
+		self.item = None # Item to be asked about
+		self.person = None # Person to be asked about
+		self.clue = False # Contains a clue card
+		self.trapdoor = False # Contains a trapdoor
+		self.secret = False # Contains a secret message
+		self.text = None # Text to be displayed
 
 class Room(object):
-	"""docstring for Room"""
-	def __init__(self, name):
+	"""
+		A single room.
+
+		Contains a name, number, locked state, and furniture.
+	"""
+	def __init__(self, name, initial_furniture):
 		super(Room, self).__init__()
 		
 		self.name = name
 		self.code = -1
-		self.furniture = []
-		self.locked = False
+		self.furniture = initial_furniture
+		self.locked = False # Lost when a game is restarted.
 		
 	def __str__(self):
 		contains = ", ".join(map(str, self.furniture))
@@ -55,14 +67,16 @@ class Room(object):
 		return (furniture_number in self.furniture)
 		
 class Game(object):
-	"""docstring for Game"""
+	"""
+		The game. Creates the scenarios and runs the core logic.
+	"""
 	def __init__(self, seed):
 		super(Game, self).__init__()
 
 		self.items = ["Tape", "Letter", "Photos", "Map"]
 		self.people = ["Cook", "Chauffeur", "Maid", "Butler"]
 
-		self.clues_found = 0
+		self.clues_found = 0 # Lost when a game is restarted.
 
 		self.seed = seed
 		random.seed(seed) # Set the seed. This allows game continuation.
@@ -70,13 +84,14 @@ class Game(object):
 		self.build_furniture()
 		self.build_rooms()
 		self.lock_rooms()
-		self.furnish_rooms()
+		#self.furnish_rooms_random() # Ignores pre-populated items.
+		self.furnish_rooms_smart() # Uses pre-planned items.
 		self.build_notes()
 		
 	def build_furniture(self):
 		furniture = {
-			111: Furniture("Dining Room Chair #1"),
-			112: Furniture("Dining Room Chair #2"),
+			111: Furniture("Dining Room Chair #1 [111]"),
+			112: Furniture("Dining Room Chair #2 [112]"),
 			113: Furniture("Dining Room Table"),
 			114: Furniture("China Cabinet"),
 			121: Furniture("Sofa"),
@@ -106,10 +121,10 @@ class Game(object):
 			241: Furniture("Lamp"),
 			242: Furniture("Planter"),
 			243: Furniture("Easel"),
-			244: Furniture("Black Armchair #1"),
-			311: Furniture("Black Armchair #2"),
-			312: Furniture("White Armchair #1"),
-			313: Furniture("White Armchair #2")
+			244: Furniture("Black Armchair #1 [244]"),
+			311: Furniture("Black Armchair #2 [311]"),
+			312: Furniture("White Armchair #1 [312]"),
+			313: Furniture("White Armchair #2 [313]")
 		}
 
 		for i in furniture.keys():
@@ -195,18 +210,19 @@ class Game(object):
 			if room.contains_furniture(furniture_number):
 				return room
 
-
 	def build_rooms(self):
+
+		# Pre-populate rooms with their important pieces of furniture.
 		room_names = [
-			Room("Living Room"),
-			Room("Bed Room"),
-			Room("Kitchen"),
-			Room("Music Room"),
-			Room("Game Room"),
-			Room("Study"),
-			Room("Library"),
-			Room("Dining Room"),
-			Room("Gym")
+			Room("Living Room", [121, 122]),
+			Room("Bed Room", [123, 124]),
+			Room("Kitchen", [132, 133, 134, 141]),
+			Room("Music Room", [213]),
+			Room("Game Room", [142, 143]),
+			Room("Study", [131]),
+			Room("Library", [144]),
+			Room("Dining Room", [111, 112, 113]),
+			Room("Gym", [211, 212])
 		]
 
 		room_numbers = [11, 12, 13, 14, 21, 22, 23, 24, 31]
@@ -228,7 +244,9 @@ class Game(object):
 		for i in room_numbers_to_lock:
 			self.rooms[i].locked = True
 
-	def furnish_rooms(self):
+	def furnish_rooms_random(self):
+		# Ignores pre-populated items.
+
 		furniture_to_use = list(self.furniture.keys())
 		random.shuffle(furniture_to_use)
 
@@ -240,6 +258,24 @@ class Game(object):
 		for room in rooms_to_use:
 			room.furniture = furniture_to_use[start:start + 4]
 			start += 4
+
+	def furnish_rooms_smart(self):
+		furniture_to_use = list(self.furniture.keys())
+		rooms_to_use = list(self.rooms.values())
+		
+		# Remove the used furniture
+		for room in rooms_to_use:
+			for furniture in room.furniture:
+				furniture_to_use.remove(furniture)
+
+		random.shuffle(furniture_to_use)
+		random.shuffle(rooms_to_use)
+
+		# Assign the remaining furniture
+		while (len(furniture_to_use) > 0):
+			for room in rooms_to_use:
+				if ((len(room.furniture) < 4) and (len(furniture_to_use) > 0)):
+					room.furniture.append(furniture_to_use.pop())
 
 	def start(self):
 		while (True): # Bad
@@ -333,7 +369,8 @@ class Game(object):
 			return
 
 		if (note.secret):
-			print("[SECRET MESSAGE]")
+			print("***[SECRET MESSAGE]***")
+			input("Press Enter to view.")
 
 		if (note.text is not None):
 			print(note.text)
@@ -388,7 +425,9 @@ def main():
 	if DEBUG:
 		print("ROOMS:")
 		for room in list(game.rooms.values()):
-			print(str(room))
+			print("{0}:".format(room.name))
+			for furniture_number in room.furniture:
+				print("- {0}".format(game.furniture[furniture_number].name))
 	
 	game.start()
 	

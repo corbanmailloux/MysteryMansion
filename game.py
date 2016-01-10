@@ -1,0 +1,397 @@
+import subprocess as sp
+import random
+
+DEBUG = False
+
+class Furniture(object):
+	"""docstring for Furniture"""
+	def __init__(self, name):
+		super(Furniture, self).__init__()
+
+		self.name = name
+		self.code = -1
+		self.note = None
+
+	def __str__(self):
+		return "{0:>3d}: {1}".format(self.code, self.name)
+
+class Note(object):
+	"""docstring for Note"""
+	def __init__(self):
+		super(Note, self).__init__()
+
+		self.money = False
+		self.ask = False
+		self.item = None
+		self.person = None
+		self.clue = False
+		self.trapdoor = False
+		self.secret = False
+		self.text = None
+
+class Room(object):
+	"""docstring for Room"""
+	def __init__(self, name):
+		super(Room, self).__init__()
+		
+		self.name = name
+		self.code = -1
+		self.furniture = []
+		self.locked = False
+		
+	def __str__(self):
+		contains = ", ".join(map(str, self.furniture))
+
+		locked_string = ""
+		if self.locked:
+			locked_string = " [LOCKED]"
+		
+		return "{0:>2d}{3}: {1} - Contains: {2}".format(self.code, self.name, contains, locked_string)
+
+	def __repr__(self):
+		return "{0:>2d}: {1}".format(self.code, self.name)
+
+	def contains_furniture(self, furniture_number):
+		return (furniture_number in self.furniture)
+		
+class Game(object):
+	"""docstring for Game"""
+	def __init__(self, seed):
+		super(Game, self).__init__()
+
+		self.items = ["Tape", "Letter", "Photos", "Map"]
+		self.people = ["Cook", "Chauffeur", "Maid", "Butler"]
+
+		self.clues_found = 0
+
+		self.seed = seed
+		random.seed(seed) # Set the seed. This allows game continuation.
+		
+		self.build_furniture()
+		self.build_rooms()
+		self.lock_rooms()
+		self.furnish_rooms()
+		self.build_notes()
+		
+	def build_furniture(self):
+		furniture = {
+			111: Furniture("Dining Room Chair #1"),
+			112: Furniture("Dining Room Chair #2"),
+			113: Furniture("Dining Room Table"),
+			114: Furniture("China Cabinet"),
+			121: Furniture("Sofa"),
+			122: Furniture("Coffee Table"),
+			123: Furniture("Bed"),
+			124: Furniture("Dresser"),
+			131: Furniture("Small Bookcase"),
+			132: Furniture("Refrigerator"),
+			133: Furniture("Sink"),
+			134: Furniture("Oven"),
+			141: Furniture("Kitchen Table"),
+			142: Furniture("Pool Table"),
+			143: Furniture("Pinball Machines"),
+			144: Furniture("Large Bookcase"),
+			211: Furniture("Whirlpool"),
+			212: Furniture("Treadmill"),
+			213: Furniture("Piano"),
+			214: Furniture("Telescope"),
+			221: Furniture("Clock"),
+			222: Furniture("Computer"),
+			223: Furniture("Juke Box"),
+			224: Furniture("Rug"),
+			231: Furniture("Fireplace"),
+			232: Furniture("Knight"),
+			233: Furniture("Television"),
+			234: Furniture("Fish Tank"),
+			241: Furniture("Lamp"),
+			242: Furniture("Planter"),
+			243: Furniture("Easel"),
+			244: Furniture("Black Armchair #1"),
+			311: Furniture("Black Armchair #2"),
+			312: Furniture("White Armchair #1"),
+			313: Furniture("White Armchair #2")
+		}
+
+		for i in furniture.keys():
+			furniture[i].code = i
+
+		self.furniture = furniture
+
+	def build_notes(self):
+		furniture_to_use = list(self.furniture.values())
+		random.shuffle(furniture_to_use)
+
+		# Hide the money
+		money_furniture = furniture_to_use.pop()
+		money_room = self.find_furniture(money_furniture.code)
+		money_note = Note()
+		money_note.money = True
+		money_note.ask = True
+		money_note.item = random.choice(self.items)
+		money_note.person = random.choice(self.people)
+		money_furniture.note = money_note
+		if DEBUG:
+			print("DEBUG: The money is in the {0}, code: {1}.".format(money_furniture.name, money_furniture.code))
+
+		nonmoney_furniture = list(self.furniture.values())
+		nonmoney_furniture.remove(money_furniture)
+
+		nonmoney_rooms = list(self.rooms.values())
+		nonmoney_rooms.remove(money_room)
+
+		# Generate 11 "You found a clue!" notes.
+		clue_furniture = []
+		for i in range(11): 
+			note = Note()
+			note.clue = True
+			furniture = furniture_to_use.pop()
+			furniture.note = note
+			clue_furniture.append(furniture)
+
+		# Trapdoor
+		note = Note()
+		note.trapdoor = True
+		furniture_to_use.pop().note = note
+
+		# Secret, 1-item, non-room clues
+		for i in range(2):
+			note = Note()
+			note.secret = True
+			note.ask = True
+			if (random.choice([True, False])):
+				note.item = random.choice(self.items)
+				note.person = None
+			else:
+				note.item = None
+				note.person = random.choice(self.people)
+			note.text = "The money is not in the {0}.".format(random.choice(nonmoney_rooms).name)
+			furniture_to_use.pop().note = note
+
+		# 2-item, normal clue
+		note = Note()
+		note.ask = True
+		note.item = random.choice(self.items)
+		note.person = random.choice(self.people)
+		note.clue = True
+		furniture_to_use.pop().note = note
+
+		# Not in furniture
+		for i in range(6):
+			note = Note()
+			note.text = "The money is not in the {0}.".format(random.choice(nonmoney_furniture).name)
+			furniture_to_use.pop().note = note
+
+		# Look in furniture for clue
+		for i in range(4):
+			note = Note()
+			note.text = "Look in the {0} for a clue.".format(random.choice(clue_furniture).name)
+			furniture_to_use.pop().note = note
+
+		if DEBUG:
+			print("Unused items: {0}".format(len(furniture_to_use)))
+
+	def find_furniture(self, furniture_number):
+		for room in list(self.rooms.values()):
+			if room.contains_furniture(furniture_number):
+				return room
+
+
+	def build_rooms(self):
+		room_names = [
+			Room("Living Room"),
+			Room("Bed Room"),
+			Room("Kitchen"),
+			Room("Music Room"),
+			Room("Game Room"),
+			Room("Study"),
+			Room("Library"),
+			Room("Dining Room"),
+			Room("Gym")
+		]
+
+		room_numbers = [11, 12, 13, 14, 21, 22, 23, 24, 31]
+		random.shuffle(room_names)
+
+		rooms = dict(zip(room_numbers, room_names))
+
+		for i in rooms.keys():
+			rooms[i].code = i
+
+		self.rooms = rooms
+
+	def lock_rooms(self):
+		room_numbers = list(self.rooms.keys())
+		room_numbers.remove(11)
+
+		room_numbers_to_lock = random.sample(room_numbers, random.randrange(1, 3))
+		
+		for i in room_numbers_to_lock:
+			self.rooms[i].locked = True
+
+	def furnish_rooms(self):
+		furniture_to_use = list(self.furniture.keys())
+		random.shuffle(furniture_to_use)
+
+		rooms_to_use = list(self.rooms.values())
+		random.shuffle(rooms_to_use)
+		
+		# 8 rooms get 4 pieces, 1 rooms gets 3 pieces
+		start = 0
+		for room in rooms_to_use:
+			room.furniture = furniture_to_use[start:start + 4]
+			start += 4
+
+	def start(self):
+		while (True): # Bad
+			clear_screen()
+			self.get_input()
+			input("(Enter to continue.)")
+
+	def get_input(self):
+		try:
+			in_value = int(input("Enter number: "))
+		except ValueError:
+			print("Invalid value entered.")
+			return
+		
+		in_lenth = len(str(in_value))
+		
+		if (in_lenth == 2): # Room
+			self.explore_room(in_value)
+		elif (in_lenth == 3): # Furniture
+			self.explore_furniture(in_value)
+		else:
+			print("Invalid value entered.")
+			return
+			
+	def explore_room(self, room_number):
+		if room_number not in self.rooms.keys():
+			print("Invalid value entered.")
+			return
+
+		room = self.rooms[room_number]
+
+		if room.locked:
+			print("This room is locked. Do you have a key?")
+			in_value = input("y/n: ")
+
+			if (in_value is "y") or (in_value is "Y"):
+				room.locked = False
+			else:
+				print("Sorry.")
+				return
+
+		print("This is the {0}. You see the following:".format(room.name))
+		for furniture_number in room.furniture:
+			print("- {0}".format(self.furniture[furniture_number].name))
+
+	def explore_furniture(self, furniture_number):
+		if furniture_number not in self.furniture.keys():
+			print("Invalid value entered.")
+			return
+
+		furniture = self.furniture[furniture_number]
+		print(str(furniture))
+
+		if (furniture.note is None):
+			print("Sorry; no clue here.")
+			return
+
+		note = furniture.note
+
+		if (note.trapdoor):
+			print("Oops! A trapdoor! Go to the entrance.")
+			return
+
+		if (note.ask):
+			if (note.item is not None):
+				print("Do you have the {0}?".format(note.item))
+				in_value = input("y/n: ")
+
+				if (in_value is "y") or (in_value is "Y"):
+					pass
+				else:
+					print("Sorry.")
+					return
+			if (note.person is not None):
+				print("Is the {0} with you?".format(note.person))
+				in_value = input("y/n: ")
+
+				if (in_value is "y") or (in_value is "Y"):
+					pass
+				else:
+					print("Sorry.")
+					return
+
+		if (note.clue):
+			if (self.clues_found < 10):
+				self.clues_found += 1
+				print("You found a clue!")
+			else:
+				print("Take a clue from another player.")
+			note.clue = False
+			return
+
+		if (note.secret):
+			print("[SECRET MESSAGE]")
+
+		if (note.text is not None):
+			print(note.text)
+			return
+
+		if (note.money):
+			print("You found the money! You WIN!")
+
+			print("      $            $            $      ")
+			print("   ,$$$$$,      ,$$$$$,      ,$$$$$,   ")
+			print(" ,$$$'$`$$$   ,$$$'$`$$$   ,$$$'$`$$$  ")
+			print(" $$$  $   `   $$$  $   `   $$$  $   `  ")
+			print(" '$$$,$       '$$$,$       '$$$,$      ")
+			print("   '$$$$,       '$$$$,       '$$$$,    ")
+			print("     '$$$$,       '$$$$,       '$$$$,  ")
+			print("      $ $$$,       $ $$$,       $ $$$, ")
+			print("  ,   $  $$$   ,   $  $$$   ,   $  $$$ ")
+			print("  $$$,$.$$$'   $$$,$.$$$'   $$$,$.$$$' ")
+			print("   '$$$$$'      '$$$$$'      '$$$$$'   ")
+			print("      $            $            $      ")
+
+			input()
+			return
+
+		# Other cases
+		print("Sorry; no clue here.")
+		return
+
+def clear_screen():
+	if not DEBUG:
+		sp.call('cls', shell=True) # Clear screen
+
+def main():
+	clear_screen()
+
+	print("Welcome to Mystery Mansion, corb.co edition!")
+	game_number_input = input("Press Enter to start a new game, or enter a game number to continue: ")
+	
+	seed = random.randrange(1,10000) # Generate a game number.
+
+	if (len(game_number_input) != 0):
+		try:
+			seed = int(game_number_input)
+		except ValueError:
+			print("Invalid value entered. Starting a new game.")
+
+	print("Write down this game number: {0}".format(seed))		
+	input("Press Enter to start game.")
+	
+	game = Game(seed)
+
+	if DEBUG:
+		print("ROOMS:")
+		for room in list(game.rooms.values()):
+			print(str(room))
+	
+	game.start()
+	
+
+# Start
+main()

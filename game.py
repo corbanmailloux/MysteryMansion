@@ -1,3 +1,11 @@
+"""
+Mystery Mansion, corb.co Edition
+
+Built in 2016 by Corban Mailloux (http://corb.co)
+
+Licensed under the MIT License.
+"""
+
 import subprocess as sp # Used to clear the screen
 import random
 

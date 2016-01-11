@@ -27,6 +27,9 @@ class Furniture(object):
     def __str__(self):
         return "{0:>3d}: {1}".format(self.code, self.name)
 
+    def __repr__(self):
+        return str(self)
+
 class Note(object):
     """
         Note objects are the data holder for each piece of furniture.
@@ -292,21 +295,35 @@ class Game(object):
             input("(Enter to continue.)")
 
     def get_input(self):
-        try:
-            in_value = int(input("Enter number: "))
-        except ValueError:
-            print("Invalid value entered.")
-            return
+        in_value = input("Enter number, or search for furniture by name: ")
+        in_lenth = len(in_value)
+
+        if (in_value.isdigit()): # Non-empty and a number
+            try:
+                in_value = int(in_value)
+            except ValueError:
+                print("Invalid value entered.")
+                return
         
-        in_lenth = len(str(in_value))
-        
-        if (in_lenth == 2): # Room
-            self.explore_room(in_value)
-        elif (in_lenth == 3): # Furniture
-            self.explore_furniture(in_value)
-        else:
-            print("Invalid value entered.")
-            return
+            if (in_lenth == 2): # Room
+                self.explore_room(in_value)
+            elif (in_lenth == 3): # Furniture
+                self.explore_furniture(in_value)
+            else:
+                print("Invalid value entered.")
+                return
+        elif (in_lenth > 0):
+            matching_furniture = []
+            for furniture in list(self.furniture.values()):
+                if (in_value.lower() in furniture.name.lower()):
+                    matching_furniture.append(furniture)
+
+            if (len(matching_furniture) > 0):
+                print("Matching Furniture:")
+                for furniture in matching_furniture:
+                    print("- {0}".format(furniture))
+            else:
+                print("No matching furniture found.")
             
     def explore_room(self, room_number):
         if room_number not in self.rooms.keys():

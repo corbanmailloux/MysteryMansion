@@ -51,8 +51,9 @@ class Note(object):
         self.person = None # Person to be asked about
         self.clue = False # Contains a clue card
         self.trapdoor = False # Contains a trapdoor
-        self.secret = False # Contains a secret message
-        self.text = None # Text to be displayed
+        self.secret = None # Secret message
+        self.not_in = None # Furniture for "The money is not in the ___"
+        self.look_in = None # Furniture for "Look in the ___ for a clue"
 
 class ItemOrPerson(object):
     """
@@ -213,7 +214,6 @@ class Game(object):
         # Secret, 1-item, non-room clues
         for i in range(2):
             note = Note()
-            note.secret = True
             note.ask = True
             if (random.choice([True, False])):
                 note.item = random.choice(self.items)
@@ -221,7 +221,7 @@ class Game(object):
             else:
                 note.item = None
                 note.person = random.choice(self.people)
-            note.text = "The money is not in the {0}.".format(random.choice(nonmoney_rooms).name)
+            note.secret = "The money is not in the {0}.".format(random.choice(nonmoney_rooms).name)
             furniture_to_use.pop().note = note
 
         # 2-item, normal clue
@@ -235,13 +235,13 @@ class Game(object):
         # Not in furniture
         for i in range(6):
             note = Note()
-            note.text = "The money is not in the {0}.".format(random.choice(nonmoney_furniture).name)
+            note.not_in = random.choice(nonmoney_furniture)
             furniture_to_use.pop().note = note
 
         # Look in furniture for clue
         for i in range(4):
             note = Note()
-            note.text = "Look in the {0} for a clue.".format(random.choice(clue_furniture).name)
+            note.look_in = random.choice(clue_furniture)
             furniture_to_use.pop().note = note
 
         if DEBUG:
@@ -450,25 +450,26 @@ class Game(object):
             note.clue = False
             return
 
-        if (note.secret):
+        if (note.secret is not None):
             print("***[SECRET MESSAGE]***")
             for i in range(3):
                 winsound.Beep(900, 175)
                 sleep(0.025)
             input("Press Enter to view.")
+            print(note.secret)
+            return
 
-        if (note.text is not None):
-            print(note.text)
+        if (note.look_in is not None):
+            print("Look in the {0} for a clue.".format(note.look_in.name))
+            self.play_sound("hint_look_1", False)
+            self.play_sound(note.look_in.filename, False)
+            self.play_sound("hint_look_2")
+            return
 
-            # Finish these!
-            # # Look in the ___ for a clue.
-            # self.play_sound("hint_look_1", False)
-            # self.play_sound(note.?, False)
-            # self.play_sound("hint_look_2")
-            #
-            # # The money is not in the ___.
-            # self.play_sound("hint_not_in")
-            # self.play_sound(note.?)
+        if (note.not_in is not None):
+            print("The money is not in the {0}.".format(note.not_in.name))
+            self.play_sound("hint_not_in", False)
+            self.play_sound(note.not_in.filename)
             return
 
         if (note.money):

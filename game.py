@@ -9,6 +9,7 @@ Licensed under the MIT License.
 import subprocess as sp # Used to clear the screen
 import random
 import winsound
+from time import sleep
 
 DEBUG = False
 
@@ -378,15 +379,18 @@ class Game(object):
         for furniture_number in room.furniture:
             print("- {0}".format(self.furniture[furniture_number].name))
 
-        self.play_sound("room_explore_1")
-        self.play_sound(room.filename)
-        self.play_sound("room_explore_2")
+        self.play_sound("room_explore_1", False)
+        self.play_sound(room.filename, False)
+        self.play_sound("room_explore_2", False)
         for furniture_number in room.furniture:
-            self.play_sound(self.furniture[furniture_number].filename)
+            self.play_sound(self.furniture[furniture_number].filename, False)
 
-    def play_sound(self, filename):
+    def play_sound(self, filename, async = True):
         base_audio_path = "game_audio\\{0}.wav"
-        winsound.PlaySound(base_audio_path.format(filename), winsound.SND_FILENAME)
+        if (async):
+            winsound.PlaySound(base_audio_path.format(filename), winsound.SND_FILENAME | winsound.SND_ASYNC)
+        else:
+            winsound.PlaySound(base_audio_path.format(filename), winsound.SND_FILENAME)
 
     def explore_furniture(self, furniture_number):
         if furniture_number not in self.furniture.keys():
@@ -395,7 +399,7 @@ class Game(object):
 
         furniture = self.furniture[furniture_number]
         print(str(furniture))
-        self.play_sound(furniture.filename)
+        self.play_sound(furniture.filename, False)
 
         if (furniture.note is None):
             print("Sorry; no clue here.")
@@ -412,7 +416,7 @@ class Game(object):
         if (note.ask):
             if (note.item is not None):
                 print("Do you have the {0}?".format(note.item.name))
-                self.play_sound("ask_item")
+                self.play_sound("ask_item", False)
                 self.play_sound(note.item.filename)
                 in_value = input("y/n: ")
 
@@ -423,8 +427,8 @@ class Game(object):
                     return
             if (note.person is not None):
                 print("Is the {0} with you?".format(note.person.name))
-                self.play_sound("ask_person_1")
-                self.play_sound(note.person.filename)
+                self.play_sound("ask_person_1", False)
+                self.play_sound(note.person.filename, False)
                 self.play_sound("ask_person_2")
                 in_value = input("y/n: ")
 
@@ -448,6 +452,9 @@ class Game(object):
 
         if (note.secret):
             print("***[SECRET MESSAGE]***")
+            for i in range(3):
+                winsound.Beep(900, 175)
+                sleep(0.025)
             input("Press Enter to view.")
 
         if (note.text is not None):
@@ -455,8 +462,8 @@ class Game(object):
 
             # Finish these!
             # # Look in the ___ for a clue.
-            # self.play_sound("hint_look_1")
-            # self.play_sound(note.?)
+            # self.play_sound("hint_look_1", False)
+            # self.play_sound(note.?, False)
             # self.play_sound("hint_look_2")
             #
             # # The money is not in the ___.
@@ -500,7 +507,7 @@ def main():
     print("Welcome to Mystery Mansion, corb.co edition!")
     game_number_input = input("Press Enter to start a new game, or enter a game number to continue: ")
 
-    seed = random.randrange(1,10000) # Generate a game number.
+    seed = random.randrange(1, 10000) # Generate a game number.
 
     if (len(game_number_input) != 0):
         try:
@@ -512,7 +519,7 @@ def main():
     input("Press Enter to start game.")
 
     game = Game(seed)
-    game.play_sound("welcome")
+    game.play_sound("welcome", True)
 
     if DEBUG:
         print("ROOMS:")

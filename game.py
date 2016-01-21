@@ -6,12 +6,15 @@ Built in 2016 by Corban Mailloux (http://corb.co)
 Licensed under the MIT License.
 """
 
-import subprocess as sp # Used to clear the screen
-import random
-import winsound
-from time import sleep
-
 DEBUG = False
+
+import os # Used to clear the screen
+import random
+from time import sleep
+import sys
+running_on_windows = (sys.platform == "win32")
+if (running_on_windows):
+    import winsound
 
 class Furniture(object):
     """
@@ -386,11 +389,12 @@ class Game(object):
             self.play_sound(self.furniture[furniture_number].filename, False)
 
     def play_sound(self, filename, async = True):
-        base_audio_path = "game_audio\\{0}.wav"
-        if (async):
-            winsound.PlaySound(base_audio_path.format(filename), winsound.SND_FILENAME | winsound.SND_ASYNC)
-        else:
-            winsound.PlaySound(base_audio_path.format(filename), winsound.SND_FILENAME)
+        if running_on_windows: # winsound is Windows only
+            base_audio_path = "game_audio\\{0}.wav"
+            if (async):
+                winsound.PlaySound(base_audio_path.format(filename), winsound.SND_FILENAME | winsound.SND_ASYNC)
+            else:
+                winsound.PlaySound(base_audio_path.format(filename), winsound.SND_FILENAME)
 
     def explore_furniture(self, furniture_number):
         if furniture_number not in self.furniture.keys():
@@ -500,7 +504,10 @@ class Game(object):
 
 def clear_screen():
     if not DEBUG:
-        sp.call('cls', shell=True) # Clear screen
+        if running_on_windows:
+            _ = os.system("cls") # Clear screen
+        else:
+            _ = os.system("clear") # Clear screen
 
 def main():
     clear_screen()

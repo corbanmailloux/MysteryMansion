@@ -6,10 +6,15 @@ Built in 2016 by Corban Mailloux (http://corb.co)
 Licensed under the MIT License.
 """
 
-import subprocess as sp # Used to clear the screen
-import random
-
 DEBUG = False
+
+import os # Used to clear the screen
+import random
+from time import sleep
+import sys
+running_on_windows = (sys.platform == "win32")
+if (running_on_windows):
+    import winsound
 
 class Furniture(object):
     """
@@ -23,6 +28,10 @@ class Furniture(object):
         self.name = name
         self.code = -1
         self.note = None
+
+        self.filename = "furniture\\{0}".format(name.lower())
+        if ("#" in name):
+            self.filename = self.filename[0 : self.filename.find("#") - 1]
 
     def __str__(self):
         return "{0:>3d}: {1}".format(self.code, self.name)
@@ -45,8 +54,19 @@ class Note(object):
         self.person = None # Person to be asked about
         self.clue = False # Contains a clue card
         self.trapdoor = False # Contains a trapdoor
-        self.secret = False # Contains a secret message
-        self.text = None # Text to be displayed
+        self.secret = None # Secret message
+        self.not_in = None # Furniture for "The money is not in the ___"
+        self.look_in = None # Furniture for "Look in the ___ for a clue"
+
+class ItemOrPerson(object):
+    """
+        ItemOrPerson objects represent the physical cards in the game.
+    """
+    def __init__(self, name):
+        super(ItemOrPerson, self).__init__()
+
+        self.name = name
+        self.filename = "items\\{0}".format(name.lower())
 
 class Room(object):
     """
@@ -56,19 +76,21 @@ class Room(object):
     """
     def __init__(self, name, initial_furniture):
         super(Room, self).__init__()
-        
+
         self.name = name
         self.code = -1
         self.furniture = initial_furniture
         self.locked = False # Lost when a game is restarted.
-        
+
+        self.filename = "rooms\\{0}".format(name.lower())
+
     def __str__(self):
         contains = ", ".join(map(str, self.furniture))
 
         locked_string = ""
         if self.locked:
             locked_string = " [LOCKED]"
-        
+
         return "{0:>2d}{3}: {1} - Contains: {2}".format(self.code, self.name, contains, locked_string)
 
     def __repr__(self):
@@ -76,7 +98,7 @@ class Room(object):
 
     def contains_furniture(self, furniture_number):
         return (furniture_number in self.furniture)
-        
+
 class Game(object):
     """
         The game. Creates the scenarios and runs the core logic.
@@ -84,21 +106,34 @@ class Game(object):
     def __init__(self, seed):
         super(Game, self).__init__()
 
-        self.items = ["Tape", "Letter", "Photos", "Map"]
-        self.people = ["Cook", "Chauffeur", "Maid", "Butler"]
-
         self.clues_found = 0 # Lost when a game is restarted.
 
         self.seed = seed
         random.seed(seed) # Set the seed. This allows game continuation.
-        
+
+        self.build_items()
         self.build_furniture()
         self.build_rooms()
         self.lock_rooms()
         #self.furnish_rooms_random() # Ignores pre-populated items.
         self.furnish_rooms_smart() # Uses pre-planned items.
         self.build_notes()
-        
+
+    def build_items(self):
+        self.items = [
+            ItemOrPerson("Tape"),
+            ItemOrPerson("Letter"),
+            ItemOrPerson("Photos"),
+            ItemOrPerson("Map")
+        ]
+
+        self.people = [
+            ItemOrPerson("Cook"),
+            ItemOrPerson("Chauffeur"),
+            ItemOrPerson("Maid"),
+            ItemOrPerson("Butler")
+        ]
+
     def build_furniture(self):
         furniture = {
             111: Furniture("Dining Room Chair #1 [111]"),
@@ -167,7 +202,7 @@ class Game(object):
 
         # Generate 11 "You found a clue!" notes.
         clue_furniture = []
-        for i in range(11): 
+        for i in range(11):
             note = Note()
             note.clue = True
             furniture = furniture_to_use.pop()
@@ -182,7 +217,6 @@ class Game(object):
         # Secret, 1-item, non-room clues
         for i in range(2):
             note = Note()
-            note.secret = True
             note.ask = True
             if (random.choice([True, False])):
                 note.item = random.choice(self.items)
@@ -190,7 +224,7 @@ class Game(object):
             else:
                 note.item = None
                 note.person = random.choice(self.people)
-            note.text = "The money is not in the {0}.".format(random.choice(nonmoney_rooms).name)
+            note.secret = "The money is not in the {0}.".format(random.choice(nonmoney_rooms).name)
             furniture_to_use.pop().note = note
 
         # 2-item, normal clue
@@ -204,13 +238,13 @@ class Game(object):
         # Not in furniture
         for i in range(6):
             note = Note()
-            note.text = "The money is not in the {0}.".format(random.choice(nonmoney_furniture).name)
+            note.not_in = random.choice(nonmoney_furniture)
             furniture_to_use.pop().note = note
 
         # Look in furniture for clue
         for i in range(4):
             note = Note()
-            note.text = "Look in the {0} for a clue.".format(random.choice(clue_furniture).name)
+            note.look_in = random.choice(clue_furniture)
             furniture_to_use.pop().note = note
 
         if DEBUG:
@@ -251,7 +285,7 @@ class Game(object):
         room_numbers.remove(11)
 
         room_numbers_to_lock = random.sample(room_numbers, random.randrange(1, 3))
-        
+
         for i in room_numbers_to_lock:
             self.rooms[i].locked = True
 
@@ -263,7 +297,7 @@ class Game(object):
 
         rooms_to_use = list(self.rooms.values())
         random.shuffle(rooms_to_use)
-        
+
         # 8 rooms get 4 pieces, 1 rooms gets 3 pieces
         start = 0
         for room in rooms_to_use:
@@ -273,7 +307,7 @@ class Game(object):
     def furnish_rooms_smart(self):
         furniture_to_use = list(self.furniture.keys())
         rooms_to_use = list(self.rooms.values())
-        
+
         # Remove the used furniture
         for room in rooms_to_use:
             for furniture in room.furniture:
@@ -304,7 +338,7 @@ class Game(object):
             except ValueError:
                 print("Invalid value entered.")
                 return
-        
+
             if (in_lenth == 2): # Room
                 self.explore_room(in_value)
             elif (in_lenth == 3): # Furniture
@@ -324,7 +358,7 @@ class Game(object):
                     print("- {0}".format(furniture))
             else:
                 print("No matching furniture found.")
-            
+
     def explore_room(self, room_number):
         if room_number not in self.rooms.keys():
             print("Invalid value entered.")
@@ -333,18 +367,34 @@ class Game(object):
         room = self.rooms[room_number]
 
         if room.locked:
-            print("This room is locked. Do you have a key?")
+            print("This room is locked. Do you have the key?")
+            self.play_sound("room_locked")
             in_value = input("y/n: ")
 
             if (in_value is "y") or (in_value is "Y"):
                 room.locked = False
             else:
                 print("Sorry.")
+                self.play_sound("sorry")
                 return
 
         print("This is the {0}. You see the following:".format(room.name))
         for furniture_number in room.furniture:
             print("- {0}".format(self.furniture[furniture_number].name))
+
+        self.play_sound("room_explore_1", False)
+        self.play_sound(room.filename, False)
+        self.play_sound("room_explore_2", False)
+        for furniture_number in room.furniture:
+            self.play_sound(self.furniture[furniture_number].filename, False)
+
+    def play_sound(self, filename, async = True):
+        if running_on_windows: # winsound is Windows only
+            base_audio_path = "game_audio\\{0}.wav"
+            if (async):
+                winsound.PlaySound(base_audio_path.format(filename), winsound.SND_FILENAME | winsound.SND_ASYNC)
+            else:
+                winsound.PlaySound(base_audio_path.format(filename), winsound.SND_FILENAME)
 
     def explore_furniture(self, furniture_number):
         if furniture_number not in self.furniture.keys():
@@ -353,20 +403,25 @@ class Game(object):
 
         furniture = self.furniture[furniture_number]
         print(str(furniture))
+        self.play_sound(furniture.filename, False)
 
         if (furniture.note is None):
             print("Sorry; no clue here.")
+            self.play_sound("clue_none")
             return
 
         note = furniture.note
 
         if (note.trapdoor):
             print("Oops! A trapdoor! Go to the entrance.")
+            self.play_sound("trapdoor")
             return
 
         if (note.ask):
             if (note.item is not None):
-                print("Do you have the {0}?".format(note.item))
+                print("Do you have the {0}?".format(note.item.name))
+                self.play_sound("ask_item", False)
+                self.play_sound(note.item.filename)
                 in_value = input("y/n: ")
 
                 if (in_value is "y") or (in_value is "Y"):
@@ -375,30 +430,50 @@ class Game(object):
                     print("Sorry.")
                     return
             if (note.person is not None):
-                print("Is the {0} with you?".format(note.person))
+                print("Is the {0} with you?".format(note.person.name))
+                self.play_sound("ask_person_1", False)
+                self.play_sound(note.person.filename, False)
+                self.play_sound("ask_person_2")
                 in_value = input("y/n: ")
 
                 if (in_value is "y") or (in_value is "Y"):
                     pass
                 else:
                     print("Sorry.")
+                    self.play_sound("sorry")
                     return
 
         if (note.clue):
             if (self.clues_found < 10):
                 self.clues_found += 1
                 print("You found a clue!")
+                self.play_sound("clue_found")
             else:
                 print("Take a clue from another player.")
+                self.play_sound("clue_take")
             note.clue = False
             return
 
-        if (note.secret):
+        if (note.secret is not None):
             print("***[SECRET MESSAGE]***")
+            for i in range(3):
+                winsound.Beep(900, 175)
+                sleep(0.025)
             input("Press Enter to view.")
+            print(note.secret)
+            return
 
-        if (note.text is not None):
-            print(note.text)
+        if (note.look_in is not None):
+            print("Look in the {0} for a clue.".format(note.look_in.name))
+            self.play_sound("hint_look_1", False)
+            self.play_sound(note.look_in.filename, False)
+            self.play_sound("hint_look_2")
+            return
+
+        if (note.not_in is not None):
+            print("The money is not in the {0}.".format(note.not_in.name))
+            self.play_sound("hint_not_in", False)
+            self.play_sound(note.not_in.filename)
             return
 
         if (note.money):
@@ -417,24 +492,30 @@ class Game(object):
             print("   '$$$$$'      '$$$$$'      '$$$$$'   ")
             print("      $            $            $      ")
 
+            self.play_sound("win")
+
             input()
             return
 
         # Other cases
         print("Sorry; no clue here.")
+        self.play_sound("clue_none")
         return
 
 def clear_screen():
     if not DEBUG:
-        sp.call('cls', shell=True) # Clear screen
+        if running_on_windows:
+            _ = os.system("cls") # Clear screen
+        else:
+            _ = os.system("clear") # Clear screen
 
 def main():
     clear_screen()
 
     print("Welcome to Mystery Mansion, corb.co edition!")
     game_number_input = input("Press Enter to start a new game, or enter a game number to continue: ")
-    
-    seed = random.randrange(1,10000) # Generate a game number.
+
+    seed = random.randrange(1, 10000) # Generate a game number.
 
     if (len(game_number_input) != 0):
         try:
@@ -442,10 +523,11 @@ def main():
         except ValueError:
             print("Invalid value entered. Starting a new game.")
 
-    print("Write down this game number: {0}".format(seed))      
+    print("Write down this game number: {0}".format(seed))
     input("Press Enter to start game.")
-    
+
     game = Game(seed)
+    game.play_sound("welcome", True)
 
     if DEBUG:
         print("ROOMS:")
@@ -453,9 +535,9 @@ def main():
             print("{0}:".format(room.name))
             for furniture_number in room.furniture:
                 print("- {0}".format(game.furniture[furniture_number].name))
-    
+
     game.start()
-    
+
 
 # Start
 main()

@@ -367,7 +367,7 @@ class Game(object):
         room = self.rooms[room_number]
 
         if room.locked:
-            print("This room is locked. Do you have a key?")
+            print("This room is locked. Do you have the key?")
             self.play_sound("room_locked")
             in_value = input("y/n: ")
 

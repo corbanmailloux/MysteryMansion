@@ -13,7 +13,6 @@ Requirements:
 
 import os  # Used to clear the screen
 import random
-from time import sleep
 import sys
 
 # Disable this if you are not on Windows and PyAudio isn't available.
@@ -537,6 +536,7 @@ class Game(object):
                     pass
                 else:
                     print("Sorry.")
+                    self.play_sound("sorry")
                     return
             if (note.person is not None):
                 print("Is the {0} with you?".format(note.person.name))
@@ -565,9 +565,7 @@ class Game(object):
 
         if (note.secret is not None):
             print("***[SECRET MESSAGE]***")
-            for i in range(3):
-                winsound.Beep(900, 175)
-                sleep(0.025)
+            self.play_sound("secret")
             input("Press Enter to view.")
             print(note.secret)
             return

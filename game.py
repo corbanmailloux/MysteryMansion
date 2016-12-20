@@ -29,6 +29,7 @@ elif (not running_on_windows and ENABLE_AUDIO):
         print("PyAudio not found. See: " +
               "https://people.csail.mit.edu/hubert/pyaudio/")
         print("Disabling audio support.")
+        input("(Enter to continue.)")
         ENABLE_AUDIO = False
     else:
         import wave

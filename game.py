@@ -52,7 +52,7 @@ class Furniture(object):
         self.code = -1
         self.note = None
 
-        self.filename = "furniture\\{0}".format(name.lower())
+        self.filename = "furniture/{0}".format(name.lower())
         if ("#" in name):
             self.filename = self.filename[0: self.filename.find("#") - 1]
 
@@ -100,7 +100,7 @@ class ItemOrPerson(object):
         super(ItemOrPerson, self).__init__()
 
         self.name = name
-        self.filename = "items\\{0}".format(name.lower())
+        self.filename = "items/{0}".format(name.lower())
 
 
 class Room(object):
@@ -118,7 +118,7 @@ class Room(object):
         self.furniture = initial_furniture
         self.locked = False  # Lost when a game is restarted.
 
-        self.filename = "rooms\\{0}".format(name.lower())
+        self.filename = "rooms/{0}".format(name.lower())
 
     def __str__(self):
         """Get a string version of the room.

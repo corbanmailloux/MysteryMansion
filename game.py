@@ -23,9 +23,16 @@ running_on_windows = (sys.platform == "win32")
 if (running_on_windows and ENABLE_AUDIO):
     import winsound
 elif (not running_on_windows and ENABLE_AUDIO):
-    import pyaudio
-    import wave
-    WAVE_CHUNK_SIZE = 1024
+    try:
+        import pyaudio
+    except ImportError:
+        print("PyAudio not found. See: " +
+              "https://people.csail.mit.edu/hubert/pyaudio/")
+        print("Disabling audio support.")
+        ENABLE_AUDIO = False
+    else:
+        import wave
+        WAVE_CHUNK_SIZE = 1024
 
 DEBUG = False
 

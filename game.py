@@ -619,7 +619,7 @@ class Game(object):
         if (not ENABLE_AUDIO):
             return
 
-        audio_path = ".\\game_audio\\{0}.wav".format(filename)
+        audio_path = "./game_audio/{0}.wav".format(filename)
 
         if running_on_windows:  # winsound is Windows only
             if (async):

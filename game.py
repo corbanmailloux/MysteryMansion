@@ -3,15 +3,29 @@
 Built in 2016 by Corban Mailloux (http://corb.co)
 
 Licensed under the MIT License.
+
+Requirements:
+- Windows: No additional packages are needed.
+- Linux: If audio is enabled, PyAudio is required. See:
+    https://people.csail.mit.edu/hubert/pyaudio/
+    for instalation instructions.
 """
 
 import os  # Used to clear the screen
 import random
 from time import sleep
 import sys
+
+# Disable this if you are not on Windows and PyAudio isn't available.
+ENABLE_AUDIO = True
+
 running_on_windows = (sys.platform == "win32")
-if (running_on_windows):
+if (running_on_windows and ENABLE_AUDIO):
     import winsound
+elif (not running_on_windows and ENABLE_AUDIO):
+    import pyaudio
+    import wave
+    WAVE_CHUNK_SIZE = 1024
 
 DEBUG = False
 
@@ -133,6 +147,12 @@ class Game(object):
     def __init__(self, seed):
         """Create a new game."""
         super(Game, self).__init__()
+
+        self.pyaudio_instance = None
+        self.wave_file = None
+        self.pyaudio_stream = None
+        if (not running_on_windows and ENABLE_AUDIO):
+            self.pyaudio_instance = pyaudio.PyAudio()
 
         self.clues_found = 0  # Lost when a game is restarted.
 
@@ -476,22 +496,6 @@ class Game(object):
         for furniture_number in room.furniture:
             self.play_sound(self.furniture[furniture_number].filename, False)
 
-    def play_sound(self, filename, async=True):
-        """Play the given audio file.
-
-        If async is True, this method returns immediately.
-        """
-        if running_on_windows:  # winsound is Windows only
-            base_audio_path = "game_audio\\{0}.wav"
-            if (async):
-                winsound.PlaySound(
-                    base_audio_path.format(filename),
-                    winsound.SND_FILENAME | winsound.SND_ASYNC)
-            else:
-                winsound.PlaySound(
-                    base_audio_path.format(filename),
-                    winsound.SND_FILENAME)
-
     def explore_furniture(self, furniture_number):
         """Explore a piece of furniture."""
         if furniture_number not in self.furniture.keys():
@@ -598,6 +602,70 @@ class Game(object):
         print("Sorry; no clue here.")
         self.play_sound("clue_none")
         return
+
+    def play_sound(self, filename, async=True):
+        """Play the given audio file, if audio is enabled.
+
+        If async is True, this method returns immediately.
+        """
+        if (not ENABLE_AUDIO):
+            return
+
+        audio_path = ".\\game_audio\\{0}.wav".format(filename)
+
+        if running_on_windows:  # winsound is Windows only
+            if (async):
+                winsound.PlaySound(
+                    audio_path,
+                    winsound.SND_FILENAME | winsound.SND_ASYNC)
+            else:
+                winsound.PlaySound(
+                    audio_path,
+                    winsound.SND_FILENAME)
+        else:  # use pyaudio
+            self.play_pyaudio(audio_path, async)
+
+    def play_pyaudio(self, audio_path, async):
+        """Use PyAudio to play the audio file.
+
+        This is the default method on non-Windows OSes.
+        """
+        # Cleanup the last audio
+        if (self.pyaudio_stream is not None):
+            self.pyaudio_stream.stop_stream()
+            self.pyaudio_stream.close()
+        if (self.wave_file is not None):
+            self.wave_file.close()
+
+        self.wave_file = wave.open(audio_path, 'rb')
+
+        if (async):
+            self.pyaudio_stream = self.pyaudio_instance.open(
+                format=self.pyaudio_instance.get_format_from_width(
+                    self.wave_file.getsampwidth()),
+                channels=self.wave_file.getnchannels(),
+                rate=self.wave_file.getframerate(),
+                output=True,
+                stream_callback=self.pyaudio_callback)
+
+            self.pyaudio_stream.start_stream()
+        else:
+            self.pyaudio_stream = self.pyaudio_instance.open(
+                format=self.pyaudio_instance.get_format_from_width(
+                    self.wave_file.getsampwidth()),
+                channels=self.wave_file.getnchannels(),
+                rate=self.wave_file.getframerate(),
+                output=True)
+
+            data = self.wave_file.readframes(WAVE_CHUNK_SIZE)
+            while (data != b''):
+                self.pyaudio_stream.write(data)
+                data = self.wave_file.readframes(WAVE_CHUNK_SIZE)
+
+    def pyaudio_callback(self, in_data, frame_count, time_info, status):
+        """Callback for PyAudio for async calls."""
+        data = self.wave_file.readframes(frame_count)
+        return(data, pyaudio.paContinue)
 
 
 def clear_screen():

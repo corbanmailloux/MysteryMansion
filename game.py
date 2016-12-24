@@ -513,7 +513,7 @@ class Game(object):
 
         furniture = self.furniture[furniture_number]
         print(str(furniture))
-        self.play_sound(furniture.filename, False)
+        self.play_sound(furniture.filename, False, delay=0.2)
 
         if (furniture.note is None):
             print("Sorry; no clue here.")

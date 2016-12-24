@@ -637,6 +637,10 @@ class Game(object):
 
         if (delay is not None) and (async is False) and (type(delay) == float):
             sleep(delay)
+            if (not running_on_windows):
+                # For some reason, PyAudio is about twice as fast as winsound.
+                # Adjust delays accordingly.
+                sleep(delay)
 
     def play_pyaudio(self, audio_path, async):
         """Use PyAudio to play the audio file.

@@ -14,6 +14,7 @@ Requirements:
 import os  # Used to clear the screen
 import random
 import sys
+from time import sleep
 
 # Disable this if you are not on Windows and PyAudio isn't available.
 ENABLE_AUDIO = True
@@ -498,10 +499,11 @@ class Game(object):
             print("- {0}".format(self.furniture[furniture_number].name))
 
         self.play_sound("room_explore_1", False)
-        self.play_sound(room.filename, False)
-        self.play_sound("room_explore_2", False)
+        self.play_sound(room.filename, False, delay=0.25)
+        self.play_sound("room_explore_2", False, delay=0.2)
         for furniture_number in room.furniture:
-            self.play_sound(self.furniture[furniture_number].filename, False)
+            self.play_sound(self.furniture[furniture_number].filename, False,
+                            delay=0.2)
 
     def explore_furniture(self, furniture_number):
         """Explore a piece of furniture."""
@@ -609,10 +611,12 @@ class Game(object):
         self.play_sound("clue_none")
         return
 
-    def play_sound(self, filename, async=True):
+    def play_sound(self, filename, async=True, delay=None):
         """Play the given audio file, if audio is enabled.
 
         If async is True, this method returns immediately.
+        If delay is set to a float, and async is False, this method will wait
+          the given number of seconds before returning.
         """
         if (not ENABLE_AUDIO):
             return
@@ -630,6 +634,9 @@ class Game(object):
                     winsound.SND_FILENAME)
         else:  # use pyaudio
             self.play_pyaudio(audio_path, async)
+
+        if (delay is not None) and (async is False) and (type(delay) == float):
+            sleep(delay)
 
     def play_pyaudio(self, audio_path, async):
         """Use PyAudio to play the audio file.

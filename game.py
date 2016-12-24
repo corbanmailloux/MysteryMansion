@@ -530,7 +530,7 @@ class Game(object):
         if (note.ask):
             if (note.item is not None):
                 print("Do you have the {0}?".format(note.item.name))
-                self.play_sound("ask_item", False)
+                self.play_sound("ask_item", False, delay=0.1)
                 self.play_sound(note.item.filename)
                 in_value = input("y/n: ")
 
@@ -542,8 +542,8 @@ class Game(object):
                     return
             if (note.person is not None):
                 print("Is the {0} with you?".format(note.person.name))
-                self.play_sound("ask_person_1", False)
-                self.play_sound(note.person.filename, False)
+                self.play_sound("ask_person_1", False, delay=0.1)
+                self.play_sound(note.person.filename, False, delay=0.1)
                 self.play_sound("ask_person_2")
                 in_value = input("y/n: ")
 

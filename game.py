@@ -16,6 +16,8 @@ import random
 import sys
 from time import sleep
 
+from win_animation import win_animation  # See win_animation.py
+
 # Disable this if you are not on Windows and PyAudio isn't available.
 ENABLE_AUDIO = True
 
@@ -587,23 +589,25 @@ class Game(object):
             return
 
         if (note.money):
-            print("You found the money! You WIN!")
-
-            print("      $            $            $      ")
-            print("   ,$$$$$,      ,$$$$$,      ,$$$$$,   ")
-            print(" ,$$$'$`$$$   ,$$$'$`$$$   ,$$$'$`$$$  ")
-            print(" $$$  $   `   $$$  $   `   $$$  $   `  ")
-            print(" '$$$,$       '$$$,$       '$$$,$      ")
-            print("   '$$$$,       '$$$$,       '$$$$,    ")
-            print("     '$$$$,       '$$$$,       '$$$$,  ")
-            print("      $ $$$,       $ $$$,       $ $$$, ")
-            print("  ,   $  $$$   ,   $  $$$   ,   $  $$$ ")
-            print("  $$$,$.$$$'   $$$,$.$$$'   $$$,$.$$$' ")
-            print("   '$$$$$'      '$$$$$'      '$$$$$'   ")
-            print("      $            $            $      ")
-
             self.play_sound("win")
-
+            for i in range(3):
+                for frame in win_animation:
+                    clear_screen()
+                    print("You found the money! You WIN!")
+                    print(frame)
+                    print("      $            $            $      ")
+                    print("   ,$$$$$,      ,$$$$$,      ,$$$$$,   ")
+                    print(" ,$$$'$`$$$   ,$$$'$`$$$   ,$$$'$`$$$  ")
+                    print(" $$$  $   `   $$$  $   `   $$$  $   `  ")
+                    print(" '$$$,$       '$$$,$       '$$$,$      ")
+                    print("   '$$$$,       '$$$$,       '$$$$,    ")
+                    print("     '$$$$,       '$$$$,       '$$$$,  ")
+                    print("      $ $$$,       $ $$$,       $ $$$, ")
+                    print("  ,   $  $$$   ,   $  $$$   ,   $  $$$ ")
+                    print("  $$$,$.$$$'   $$$,$.$$$'   $$$,$.$$$' ")
+                    print("   '$$$$$'      '$$$$$'      '$$$$$'   ")
+                    print("      $            $            $      ")
+                    sleep(0.2)
             input()
             return
 

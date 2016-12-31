@@ -85,7 +85,7 @@ class Note(object):
         self.ask = False  # Ask about the item and/or person
         self.item = None  # Item to be asked about
         self.person = None  # Person to be asked about
-        self.clue = False  # Contains a clue card
+        self.clue = 0  # How many clues are remaining?
         self.trapdoor = False  # Contains a trapdoor
         self.secret = None  # Secret message
         self.not_in = None  # Furniture for "The money is not in the ___"
@@ -267,7 +267,7 @@ class Game(object):
         clue_furniture = []
         for i in range(11):
             note = Note()
-            note.clue = True
+            note.clue = 2  # Furniture starts with 2 clues
             furniture = furniture_to_use.pop()
             furniture.note = note
             clue_furniture.append(furniture)
@@ -292,12 +292,13 @@ class Game(object):
             furniture_to_use.pop().note = note
 
         # 2-item, normal clue
-        note = Note()
-        note.ask = True
-        note.item = random.choice(self.items)
-        note.person = random.choice(self.people)
-        note.clue = True
-        furniture_to_use.pop().note = note
+        for i in range(1):
+            note = Note()
+            note.ask = True
+            note.item = random.choice(self.items)
+            note.person = random.choice(self.people)
+            note.clue = 2
+            furniture_to_use.pop().note = note
 
         # Not in furniture
         for i in range(6):
@@ -554,15 +555,15 @@ class Game(object):
                     self.play_sound("sorry")
                     return
 
-        if (note.clue):
+        if (note.clue > 0):
             if (self.clues_found < 10):
-                self.clues_found += 1
                 print("You found a clue!")
                 self.play_sound("clue_found")
             else:
                 print("Take a clue from another player.")
                 self.play_sound("clue_take")
-            note.clue = False
+            self.clues_found += 1  # Keep track of how many have been found
+            note.clue -= 1  # Remove a clue from the furniture
             return
 
         if (note.secret is not None):

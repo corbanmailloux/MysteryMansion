@@ -454,7 +454,7 @@ class Game(object):
                 return
         elif (in_value == "exit"):
             exit_value = input("Exit game? y/n: ")
-            if (exit_value is "y") or (exit_value is "Y"):
+            if (exit_value == "y") or (exit_value == "Y"):
                 print("Exiting...")
                 sys.exit(0)
             else:
@@ -490,7 +490,7 @@ class Game(object):
             self.play_sound("room_locked")
             in_value = input("y/n: ")
 
-            if (in_value is "y") or (in_value is "Y"):
+            if (in_value == "y") or (in_value == "Y"):
                 room.locked = False
             else:
                 print("Sorry.")
@@ -537,7 +537,7 @@ class Game(object):
                 self.play_sound(note.item.filename)
                 in_value = input("y/n: ")
 
-                if (in_value is "y") or (in_value is "Y"):
+                if (in_value == "y") or (in_value == "Y"):
                     pass
                 else:
                     print("Sorry.")
@@ -550,7 +550,7 @@ class Game(object):
                 self.play_sound("ask_person_2")
                 in_value = input("y/n: ")
 
-                if (in_value is "y") or (in_value is "Y"):
+                if (in_value == "y") or (in_value == "Y"):
                     pass
                 else:
                     print("Sorry.")
@@ -616,11 +616,11 @@ class Game(object):
         self.play_sound("clue_none")
         return
 
-    def play_sound(self, filename, async=True, delay=None):
+    def play_sound(self, filename, play_async=True, delay=None):
         """Play the given audio file, if audio is enabled.
 
-        If async is True, this method returns immediately.
-        If delay is set to a float, and async is False, this method will wait
+        If play_async is True, this method returns immediately.
+        If delay is set to a float, and play_async is False, this method will wait
           the given number of seconds before returning.
         """
         if (not ENABLE_AUDIO):
@@ -629,7 +629,7 @@ class Game(object):
         audio_path = "./game_audio/{0}.wav".format(filename)
 
         if running_on_windows:  # winsound is Windows only
-            if (async):
+            if play_async:
                 winsound.PlaySound(
                     audio_path,
                     winsound.SND_FILENAME | winsound.SND_ASYNC)
@@ -638,16 +638,16 @@ class Game(object):
                     audio_path,
                     winsound.SND_FILENAME)
         else:  # use pyaudio
-            self.play_pyaudio(audio_path, async)
+            self.play_pyaudio(audio_path, play_async)
 
-        if (delay is not None) and (async is False) and (type(delay) == float):
+        if (delay is not None) and (play_async is False) and (type(delay) == float):
             sleep(delay)
             if (not running_on_windows):
                 # For some reason, PyAudio is about twice as fast as winsound.
                 # Adjust delays accordingly.
                 sleep(delay)
 
-    def play_pyaudio(self, audio_path, async):
+    def play_pyaudio(self, audio_path, play_async):
         """Use PyAudio to play the audio file.
 
         This is the default method on non-Windows OSes.
@@ -661,7 +661,7 @@ class Game(object):
 
         self.wave_file = wave.open(audio_path, 'rb')
 
-        if (async):
+        if (play_async):
             self.pyaudio_stream = self.pyaudio_instance.open(
                 format=self.pyaudio_instance.get_format_from_width(
                     self.wave_file.getsampwidth()),

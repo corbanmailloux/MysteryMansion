@@ -21,20 +21,22 @@ from win_animation import win_animation  # See win_animation.py
 # Disable this if you are not on Windows and PyAudio isn't available.
 ENABLE_AUDIO = True
 
-running_on_windows = (sys.platform == "win32")
-if (running_on_windows and ENABLE_AUDIO):
+running_on_windows = sys.platform == "win32"
+if running_on_windows and ENABLE_AUDIO:
     import winsound
-elif (not running_on_windows and ENABLE_AUDIO):
+elif not running_on_windows and ENABLE_AUDIO:
     try:
         import pyaudio
     except ImportError:
-        print("PyAudio not found. See: " +
-              "https://people.csail.mit.edu/hubert/pyaudio/")
+        print(
+            "PyAudio not found. See: " + "https://people.csail.mit.edu/hubert/pyaudio/"
+        )
         print("Disabling audio support.")
         input("(Enter to continue.)")
         ENABLE_AUDIO = False
     else:
         import wave
+
         WAVE_CHUNK_SIZE = 1024
 
 DEBUG = False
@@ -55,8 +57,8 @@ class Furniture(object):
         self.note = None
 
         self.filename = "furniture/{0}".format(name.lower())
-        if ("#" in name):
-            self.filename = self.filename[0: self.filename.find("#") - 1]
+        if "#" in name:
+            self.filename = self.filename[0 : self.filename.find("#") - 1]
 
     def __str__(self):
         """Get string version of the piece of furniture.
@@ -134,7 +136,8 @@ class Room(object):
             locked_string = " [LOCKED]"
 
         return "{0:>2d}{3}: {1} - Contains: {2}".format(
-            self.code, self.name, contains, locked_string)
+            self.code, self.name, contains, locked_string
+        )
 
     def __repr__(self):
         """Get a simple string version of the room.
@@ -145,7 +148,7 @@ class Room(object):
 
     def contains_furniture(self, furniture_number):
         """Check if this room contains the given furniture."""
-        return (furniture_number in self.furniture)
+        return furniture_number in self.furniture
 
 
 class Game(object):
@@ -161,7 +164,7 @@ class Game(object):
         self.pyaudio_instance = None
         self.wave_file = None
         self.pyaudio_stream = None
-        if (not running_on_windows and ENABLE_AUDIO):
+        if not running_on_windows and ENABLE_AUDIO:
             self.pyaudio_instance = pyaudio.PyAudio()
 
         self.clues_found = 0  # Lost when a game is restarted.
@@ -183,14 +186,14 @@ class Game(object):
             ItemOrPerson("Tape"),
             ItemOrPerson("Letter"),
             ItemOrPerson("Photos"),
-            ItemOrPerson("Map")
+            ItemOrPerson("Map"),
         ]
 
         self.people = [
             ItemOrPerson("Cook"),
             ItemOrPerson("Chauffeur"),
             ItemOrPerson("Maid"),
-            ItemOrPerson("Butler")
+            ItemOrPerson("Butler"),
         ]
 
     def build_furniture(self):
@@ -230,7 +233,7 @@ class Game(object):
             244: Furniture("Black Armchair #1 [244]"),
             311: Furniture("Black Armchair #2 [311]"),
             312: Furniture("White Armchair #1 [312]"),
-            313: Furniture("White Armchair #2 [313]")
+            313: Furniture("White Armchair #2 [313]"),
         }
 
         for i in furniture.keys():
@@ -256,8 +259,11 @@ class Game(object):
         money_note.person = random.choice(self.people)
         money_furniture.note = money_note
         if DEBUG:  # Spoil the game for developers.
-            print("DEBUG: The money is in the {0}, code: {1}.".format(
-                money_furniture.name, money_furniture.code))
+            print(
+                "DEBUG: The money is in the {0}, code: {1}.".format(
+                    money_furniture.name, money_furniture.code
+                )
+            )
 
         nonmoney_furniture = list(self.furniture.values())
         nonmoney_furniture.remove(money_furniture)
@@ -283,14 +289,15 @@ class Game(object):
         for i in range(2):
             note = Note()
             note.ask = True
-            if (random.choice([True, False])):
+            if random.choice([True, False]):
                 note.item = random.choice(self.items)
                 note.person = None
             else:
                 note.item = None
                 note.person = random.choice(self.people)
             note.secret = "The money is not in the {0}.".format(
-                random.choice(nonmoney_rooms).name)
+                random.choice(nonmoney_rooms).name
+            )
             furniture_to_use.pop().note = note
 
         # 2-item, normal clue
@@ -331,28 +338,20 @@ class Game(object):
         room_names = [
             Room("Living Room", [121, 122]),
             # Sofa, Coffee Table
-
             Room("Bed Room", [123, 124]),
             # Bed, Dresser
-
             Room("Kitchen", [132, 133, 134, 141]),
             # Refrigerator, Sink, Oven, Kitchen Table
-
             Room("Music Room", [213]),
             # Piano
-
             Room("Game Room", [142, 143]),
             # Pool Table, Pinball Machines
-
             Room("Study", [131]),
             # Small Bookcase
-
             Room("Library", [144]),
             # Large Bookcase
-
             Room("Dining Room", [111, 112, 113]),
             # (2) Dining Room Chairs, Dining Room Table
-
             Room("Gym", [211, 212])
             # Whirlpool, Treadmill
         ]
@@ -370,10 +369,9 @@ class Game(object):
     def lock_rooms(self):
         """Lock 1 or 2 rooms."""
         room_numbers = list(self.rooms.keys())
-        room_numbers.remove(11)
+        room_numbers.remove(11)  # Cannot lock the first room.
 
-        room_numbers_to_lock = random.sample(
-            room_numbers, random.randrange(1, 3))
+        room_numbers_to_lock = random.sample(room_numbers, random.randrange(1, 3))
 
         for i in room_numbers_to_lock:
             self.rooms[i].locked = True
@@ -392,7 +390,7 @@ class Game(object):
         # 8 rooms get 4 pieces, 1 rooms gets 3 pieces
         start = 0
         for room in rooms_to_use:
-            room.furniture = furniture_to_use[start:start + 4]
+            room.furniture = furniture_to_use[start : start + 4]
             start += 4
 
     def furnish_rooms_smart(self):
@@ -414,14 +412,14 @@ class Game(object):
         random.shuffle(rooms_to_use)
 
         # Assign the remaining furniture
-        while (len(furniture_to_use) > 0):
+        while len(furniture_to_use) > 0:
             for room in rooms_to_use:
-                if ((len(room.furniture) < 4) and (len(furniture_to_use) > 0)):
+                if (len(room.furniture) < 4) and (len(furniture_to_use) > 0):
                     room.furniture.append(furniture_to_use.pop())
 
     def start(self):
         """Start the game."""
-        while (True):  # Bad
+        while True:  # Game loop
             clear_screen()
             self.get_input()
             input("(Enter to continue.)")
@@ -435,24 +433,25 @@ class Game(object):
         - string to search for matching furniture
         """
         in_value = input(
-            "Enter number, or search for furniture by name ('exit' to exit): ")
-        in_lenth = len(in_value)
+            "Enter number, or search for furniture by name ('exit' to exit): "
+        )
+        in_length = len(in_value)
 
-        if (in_value.isdigit()):  # Non-empty and a number
+        if in_value.isdigit():  # Non-empty and a number
             try:
                 in_value = int(in_value)
             except ValueError:
                 print("Invalid value entered.")
                 return
 
-            if (in_lenth == 2):  # Room
+            if in_length == 2:  # Room
                 self.explore_room(in_value)
-            elif (in_lenth == 3):  # Furniture
+            elif in_length == 3:  # Furniture
                 self.explore_furniture(in_value)
             else:
                 print("Invalid value entered.")
                 return
-        elif (in_value == "exit"):
+        elif in_value == "exit":
             exit_value = input("Exit game? y/n: ")
             if (exit_value == "y") or (exit_value == "Y"):
                 print("Exiting...")
@@ -460,13 +459,13 @@ class Game(object):
             else:
                 print("Continuing game.")
                 return  # Go to "(Enter to continue.)"
-        elif (in_lenth > 0):
+        elif in_length > 0:
             matching_furniture = []
             for furniture in list(self.furniture.values()):
-                if (in_value.lower() in furniture.name.lower()):
+                if in_value.lower() in furniture.name.lower():
                     matching_furniture.append(furniture)
 
-            if (len(matching_furniture) > 0):
+            if len(matching_furniture) > 0:
                 print("Matching Furniture:")
                 for furniture in matching_furniture:
                     print("- {0}".format(furniture))
@@ -505,8 +504,7 @@ class Game(object):
         self.play_sound(room.filename, False, delay=0.25)
         self.play_sound("room_explore_2", False, delay=0.2)
         for furniture_number in room.furniture:
-            self.play_sound(self.furniture[furniture_number].filename, False,
-                            delay=0.2)
+            self.play_sound(self.furniture[furniture_number].filename, False, delay=0.2)
 
     def explore_furniture(self, furniture_number):
         """Explore a piece of furniture."""
@@ -518,20 +516,20 @@ class Game(object):
         print(str(furniture))
         self.play_sound(furniture.filename, False, delay=0.1)
 
-        if (furniture.note is None):
+        if furniture.note is None:
             print("Sorry; no clue here.")
             self.play_sound("clue_none")
             return
 
         note = furniture.note
 
-        if (note.trapdoor):
+        if note.trapdoor:
             print("Oops! A trapdoor! Go to the entrance.")
             self.play_sound("trapdoor")
             return
 
-        if (note.ask):
-            if (note.item is not None):
+        if note.ask:
+            if note.item is not None:
                 print("Do you have the {0}?".format(note.item.name))
                 self.play_sound("ask_item", False, delay=0.1)
                 self.play_sound(note.item.filename)
@@ -543,7 +541,7 @@ class Game(object):
                     print("Sorry.")
                     self.play_sound("sorry")
                     return
-            if (note.person is not None):
+            if note.person is not None:
                 print("Is the {0} with you?".format(note.person.name))
                 self.play_sound("ask_person_1", False, delay=0.1)
                 self.play_sound(note.person.filename, False, delay=0.1)
@@ -557,8 +555,8 @@ class Game(object):
                     self.play_sound("sorry")
                     return
 
-        if (note.clue > 0):
-            if (self.clues_found < 10):
+        if note.clue > 0:
+            if self.clues_found < 10:
                 print("You found a clue!")
                 self.play_sound("clue_found")
             else:
@@ -568,27 +566,27 @@ class Game(object):
             note.clue -= 1  # Remove a clue from the furniture
             return
 
-        if (note.secret is not None):
+        if note.secret is not None:
             print("***[SECRET MESSAGE]***")
             self.play_sound("secret")
             input("Press Enter to view.")
             print(note.secret)
             return
 
-        if (note.look_in is not None):
+        if note.look_in is not None:
             print("Look in the {0} for a clue.".format(note.look_in.name))
             self.play_sound("hint_look_1", False)
             self.play_sound(note.look_in.filename, False)
             self.play_sound("hint_look_2")
             return
 
-        if (note.not_in is not None):
+        if note.not_in is not None:
             print("The money is not in the {0}.".format(note.not_in.name))
             self.play_sound("hint_not_in", False)
             self.play_sound(note.not_in.filename)
             return
 
-        if (note.money):
+        if note.money:
             self.play_sound("win")
             for i in range(3):
                 for frame in win_animation:
@@ -623,7 +621,7 @@ class Game(object):
         If delay is set to a float, and play_async is False, this method will wait
           the given number of seconds before returning.
         """
-        if (not ENABLE_AUDIO):
+        if not ENABLE_AUDIO:
             return
 
         audio_path = "./game_audio/{0}.wav".format(filename)
@@ -631,18 +629,16 @@ class Game(object):
         if running_on_windows:  # winsound is Windows only
             if play_async:
                 winsound.PlaySound(
-                    audio_path,
-                    winsound.SND_FILENAME | winsound.SND_ASYNC)
+                    audio_path, winsound.SND_FILENAME | winsound.SND_ASYNC
+                )
             else:
-                winsound.PlaySound(
-                    audio_path,
-                    winsound.SND_FILENAME)
+                winsound.PlaySound(audio_path, winsound.SND_FILENAME)
         else:  # use pyaudio
             self.play_pyaudio(audio_path, play_async)
 
         if (delay is not None) and (play_async is False) and (type(delay) == float):
             sleep(delay)
-            if (not running_on_windows):
+            if not running_on_windows:
                 # For some reason, PyAudio is about twice as fast as winsound.
                 # Adjust delays accordingly.
                 sleep(delay)
@@ -653,41 +649,45 @@ class Game(object):
         This is the default method on non-Windows OSes.
         """
         # Cleanup the last audio
-        if (self.pyaudio_stream is not None):
+        if self.pyaudio_stream is not None:
             self.pyaudio_stream.stop_stream()
             self.pyaudio_stream.close()
-        if (self.wave_file is not None):
+        if self.wave_file is not None:
             self.wave_file.close()
 
-        self.wave_file = wave.open(audio_path, 'rb')
+        self.wave_file = wave.open(audio_path, "rb")
 
-        if (play_async):
+        if play_async:
             self.pyaudio_stream = self.pyaudio_instance.open(
                 format=self.pyaudio_instance.get_format_from_width(
-                    self.wave_file.getsampwidth()),
+                    self.wave_file.getsampwidth()
+                ),
                 channels=self.wave_file.getnchannels(),
                 rate=self.wave_file.getframerate(),
                 output=True,
-                stream_callback=self.pyaudio_callback)
+                stream_callback=self.pyaudio_callback,
+            )
 
             self.pyaudio_stream.start_stream()
         else:
             self.pyaudio_stream = self.pyaudio_instance.open(
                 format=self.pyaudio_instance.get_format_from_width(
-                    self.wave_file.getsampwidth()),
+                    self.wave_file.getsampwidth()
+                ),
                 channels=self.wave_file.getnchannels(),
                 rate=self.wave_file.getframerate(),
-                output=True)
+                output=True,
+            )
 
             data = self.wave_file.readframes(WAVE_CHUNK_SIZE)
-            while (data != b''):
+            while data != b"":
                 self.pyaudio_stream.write(data)
                 data = self.wave_file.readframes(WAVE_CHUNK_SIZE)
 
     def pyaudio_callback(self, in_data, frame_count, time_info, status):
         """Callback for PyAudio for async calls."""
         data = self.wave_file.readframes(frame_count)
-        return(data, pyaudio.paContinue)
+        return (data, pyaudio.paContinue)
 
 
 def clear_screen():
@@ -712,11 +712,12 @@ def main():
 
     print("Welcome to Mystery Mansion, corb.co edition!")
     game_number_input = input(
-        "Press Enter to start a new game or enter a game number to continue: ")
+        "Press Enter to start a new game or enter a game number to continue: "
+    )
 
     seed = random.randrange(1, 10000)  # Generate a game number.
 
-    if (len(game_number_input) != 0):
+    if len(game_number_input) != 0:
         try:
             seed = int(game_number_input)
         except ValueError:

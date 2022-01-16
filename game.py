@@ -6,9 +6,9 @@ Licensed under the MIT License.
 
 Requirements:
 - Windows: No additional packages are needed.
-- Linux: If audio is enabled, PyAudio is required. See:
+- Linux/MacOS: If audio is enabled, PyAudio is required. See:
     https://people.csail.mit.edu/hubert/pyaudio/
-    for instalation instructions.
+    for installation instructions.
 """
 
 import os  # Used to clear the screen

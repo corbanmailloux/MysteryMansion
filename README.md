@@ -11,8 +11,8 @@ Because Python provides the [winsound](https://docs.python.org/3.1/library/winso
 
 Just clone the repository and run `python3 game.py`.
 
-#### Linux
-The Linux version depends on [PyAudio](https://people.csail.mit.edu/hubert/pyaudio/) for audio support.
+#### Linux and MacOS
+For Linux and MacOS, audio support depends on [PyAudio](https://people.csail.mit.edu/hubert/pyaudio/).
 
 Follow the installation steps on the page linked above, clone the repository, and run `python3 game.py`.
 

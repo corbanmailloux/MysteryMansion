@@ -11,7 +11,7 @@ Requirements:
     for installation instructions.
 """
 
-import os  # Used to clear the screen
+import os
 import random
 import sys
 from time import sleep
@@ -624,7 +624,10 @@ class Game(object):
         if not ENABLE_AUDIO:
             return
 
-        audio_path = "./game_audio/{0}.wav".format(filename)
+        # Use the path of this script as the base directory for audio files.
+        script_path = os.path.abspath(__file__)
+        script_directory = os.path.dirname(script_path)
+        audio_path = "{0}/game_audio/{1}.wav".format(script_directory, filename)
 
         if running_on_windows:  # winsound is Windows only
             if play_async:
